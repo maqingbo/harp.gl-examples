@@ -20895,7 +20895,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.InterpolateExpr = exports.StepExpr = exports.CaseExpr = exports.MatchExpr = exports.LookupExpr = exports.CallExpr = exports.HasAttributeExpr = exports.ObjectLiteralExpr = exports.StringLiteralExpr = exports.NumberLiteralExpr = exports.BooleanLiteralExpr = exports.NullLiteralExpr = exports.LiteralExpr = exports.VarExpr = exports.Expr = exports.ExprScope = exports.isJsonExpr = exports.ExprDependencies = void 0;
 /*
- * Copyright (C) 2019-2022 HERE Europe B.V.
+ * Copyright (C) 2019-2021 HERE Europe B.V.
  * Licensed under Apache 2.0, see full license in LICENSE
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -25333,7 +25333,7 @@ exports.setTechniqueRenderOrderOrPriority = setTechniqueRenderOrderOrPriority;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getStyles = exports.isStylesDictionary = exports.isJsonExprReference = exports.getDefinitionValue = exports.isVerboseDefinition = void 0;
+exports.isJsonExprReference = exports.getDefinitionValue = exports.isVerboseDefinition = void 0;
 /**
  * This is to distinguish between definition types at runtime, to be deprecated with
  * {@link VerboseDefinition}
@@ -25373,56 +25373,6 @@ function isJsonExprReference(value) {
         typeof value[1] === "string");
 }
 exports.isJsonExprReference = isJsonExprReference;
-/**
- * Utility function to convert old style format to new one, to be deprecated with
- * {@link StylesDictionary}
- *
- * @param stylesDict
- * @returns
- *
- */
-function convertDictionaryToStyles(stylesDict) {
-    const styles = [];
-    for (const styleSetName in stylesDict) {
-        stylesDict[styleSetName].forEach(style => {
-            if (style.styleSet === undefined) {
-                style.styleSet = styleSetName;
-            }
-            styles.push(style);
-        });
-    }
-    return styles;
-}
-/**
- * Utility function to distinguish Styles until {@link StylesDictionary} is deprecated
- *
- * @deprecated
- * @param styles
- * @returns
- */
-function isStylesDictionary(styles) {
-    return styles !== undefined && !Array.isArray(styles);
-}
-exports.isStylesDictionary = isStylesDictionary;
-/**
- * Utility function to retrieve Styles until {@link StylesDictionary} is deprecated
- *
- * @deprecated
- * @param styles
- * @returns
- */
-function getStyles(styles) {
-    if (styles === undefined) {
-        return [];
-    }
-    else if (isStylesDictionary(styles)) {
-        return convertDictionaryToStyles(styles);
-    }
-    else {
-        return styles;
-    }
-}
-exports.getStyles = getStyles;
 
 
 /***/ }),
@@ -25443,7 +25393,6 @@ exports.getStyles = getStyles;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ThemeVisitor = void 0;
 const Expr_1 = __webpack_require__(/*! ./Expr */ "../harp-datasource-protocol/lib/Expr.ts");
-const Theme_1 = __webpack_require__(/*! ./Theme */ "../harp-datasource-protocol/lib/Theme.ts");
 /**
  * The ThemeVisitor visits every style in the theme in a depth-first fashion.
  */
@@ -25469,9 +25418,13 @@ class ThemeVisitor {
             return false;
         };
         if (this.theme.styles !== undefined) {
-            for (const style of Theme_1.getStyles(this.theme.styles)) {
-                if (visit(style)) {
-                    return true;
+            for (const styleSetName in this.theme.styles) {
+                if (this.theme.styles[styleSetName] !== undefined) {
+                    for (const style of this.theme.styles[styleSetName]) {
+                        if (visit(style)) {
+                            return true;
+                        }
+                    }
                 }
             }
         }
@@ -27272,7 +27225,8 @@ exports.DebugTileDataSource = DebugTileDataSource;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.copyrightInfo = exports.apikey = void 0;
 /** @hidden */
-exports.apikey = "J0IJdYzKDYS3nHVDDEWETIqK3nAcxqW42vz7xeSq61M";
+// export const apikey = "J0IJdYzKDYS3nHVDDEWETIqK3nAcxqW42vz7xeSq61M";
+exports.apikey = "us9jd0jfjL_0c7OedTz_USgneQpXbfsrFq5v_4VlTaA";
 /** @hidden */
 exports.copyrightInfo = [
     {
@@ -36406,12 +36360,6 @@ exports.DataProvider = DataProvider;
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.TileDataSource = exports.TileFactory = void 0;
-/*
- * Copyright (C) 2019-2021 HERE Europe B.V.
- * Licensed under Apache 2.0, see full license in LICENSE
- * SPDX-License-Identifier: Apache-2.0
- */
-const harp_datasource_protocol_1 = __webpack_require__(/*! @here/harp-datasource-protocol */ "../harp-datasource-protocol/index.ts");
 const harp_mapview_1 = __webpack_require__(/*! @here/harp-mapview */ "../harp-mapview/index.ts");
 const ThemeLoader_1 = __webpack_require__(/*! @here/harp-mapview/lib/ThemeLoader */ "../harp-mapview/lib/ThemeLoader.ts");
 const harp_utils_1 = __webpack_require__(/*! @here/harp-utils */ "../harp-utils/index.ts");
@@ -36526,13 +36474,14 @@ class TileDataSource extends harp_mapview_1.DataSource {
     async setTheme(theme, languages) {
         // Seems superfluent, but the call to  ThemeLoader.load will resolve extends etc.
         theme = await ThemeLoader_1.ThemeLoader.load(theme);
-        const styleSet = harp_datasource_protocol_1.getStyles(theme.styles).filter(style => {
-            return !style.styleSet || style.styleSet === this.styleSetName;
-        });
+        let styleSet;
+        if (this.styleSetName !== undefined && theme.styles !== undefined) {
+            styleSet = theme.styles[this.styleSetName];
+        }
         if (languages !== undefined) {
             this.languages = languages;
         }
-        if (styleSet.length > 0) {
+        if (styleSet !== undefined) {
             this.m_decoder.configure({
                 styleSet,
                 definitions: theme.definitions,
@@ -39811,7 +39760,7 @@ class DataSource extends THREE.EventDispatcher {
      * @param theme - The Theme to be applied
      * @param languages - optional: The languages in priority order to be applied
      *
-     * @deprecated use setTheme( Theme ) and setLanguages(string[]) instead
+     * @deprecated use setTheme( Theme | FlatTheme) and setLanguages(string[]) instead
      */
     async setTheme(theme, languages) {
         // to be overwritten by subclasses
@@ -46246,9 +46195,9 @@ class MapViewThemeManager {
             this.m_theme.labelPriorities = theme.labelPriorities;
         }
         if (this.m_theme.styles === undefined) {
-            this.m_theme.styles = [];
+            this.m_theme.styles = {};
         }
-        this.m_theme.styles = (_b = theme.styles) !== null && _b !== void 0 ? _b : [];
+        this.m_theme.styles = (_b = theme.styles) !== null && _b !== void 0 ? _b : {};
         this.m_theme.definitions = theme.definitions;
         environment.clearBackgroundDataSource();
         for (const dataSource of this.m_mapView.dataSources) {
@@ -47154,17 +47103,16 @@ class PolarTileDataSource extends DataSource_1.DataSource {
     async setTheme(theme) {
         // Seems superfluent, but the call to  ThemeLoader.load will resolve extends etc.
         theme = await ThemeLoader_1.ThemeLoader.load(theme);
-        const styleSet = harp_datasource_protocol_1.getStyles(theme.styles).filter(style => {
-            return !style.styleSet || style.styleSet === this.styleSetName;
-        });
-        if (styleSet.length > 0) {
-            this.m_styleSetEvaluator = new index_decoder_1.StyleSetEvaluator({
-                styleSet,
-                definitions: theme.definitions,
-                priorities: theme.priorities,
-                labelPriorities: theme.labelPriorities
-            });
+        let styleSet;
+        if (this.styleSetName !== undefined && theme.styles !== undefined) {
+            styleSet = theme.styles[this.styleSetName];
         }
+        this.m_styleSetEvaluator = new index_decoder_1.StyleSetEvaluator({
+            styleSet: styleSet !== null && styleSet !== void 0 ? styleSet : [],
+            definitions: theme.definitions,
+            priorities: theme.priorities,
+            labelPriorities: theme.labelPriorities
+        });
         this.m_northPoleEntry = this.createTechiqueEntry("north_pole");
         this.m_southPoleEntry = this.createTechiqueEntry("south_pole");
         this.mapView.markTilesDirty(this);
@@ -50195,10 +50143,13 @@ class ThemeLoader {
             theme.url = harp_utils_1.getAppBaseUrl();
             theme = this.resolveUrls(theme, options);
         }
-        theme.styles = Theme_1.getStyles(theme.styles);
+        else {
+            theme = this.convertFlatTheme(theme);
+        }
         if (theme === null || theme === undefined) {
             throw new Error("ThemeLoader#load: loaded resource is not valid JSON");
         }
+        ThemeLoader.checkTechniqueSupport(theme);
         const resolveDefinitions = harp_utils_1.getOptionValue(options.resolveDefinitions, false);
         theme = await ThemeLoader.resolveBaseThemes(theme, options);
         if (resolveDefinitions) {
@@ -50213,9 +50164,8 @@ class ThemeLoader {
      * @param theme -
      */
     static isThemeLoaded(theme) {
-        //TODO: Removed isStylesDictionary check when {@link StylesDictionary} is
-        // fully deprecated
-        return theme.extends === undefined && !Theme_1.isStylesDictionary(theme.styles);
+        // TODO: Remove array check, when FlatTheme is fully supported
+        return theme.extends === undefined && !Array.isArray(theme.styles);
     }
     /**
      * @deprecated Please use `ThemeLoader.load`
@@ -50242,6 +50192,7 @@ class ThemeLoader {
     static resolveUrls(theme, options) {
         // Ensure that all resources referenced in theme by relative URIs are in fact relative to
         // theme.
+        theme = ThemeLoader.convertFlatTheme(theme);
         if (theme.url === undefined) {
             return theme;
         }
@@ -50263,11 +50214,35 @@ class ThemeLoader {
                 }
             });
         }
+        if (!ThemeLoader.convertFlatTheme(theme)) {
+            return theme;
+        }
         const resolveResources = options === undefined || !(options.resolveResourceUris === false);
         if (resolveResources) {
             ThemeLoader.resolveResources(theme, childUrlResolver);
         }
         return theme;
+    }
+    static checkTechniqueSupport(theme) {
+        if (theme.styles !== undefined) {
+            for (const styleSetName in theme.styles) {
+                if (!theme.styles.hasOwnProperty(styleSetName)) {
+                    continue;
+                }
+                for (const style of theme.styles[styleSetName]) {
+                    switch (style.technique) {
+                        // TODO: Re-enable this once "dashed-line" is deprecated.
+                        /* case "dashed-line":
+                            console.warn(
+                                `Using deprecated "dashed-line" technique.
+                                Use "solid-line" technique instead`
+                            ); */
+                        default:
+                            break;
+                    }
+                }
+            }
+        }
     }
     /**
      * Expand all `ref` expressions in {@link @here/harp-datasource-protocol#Theme}
@@ -50278,20 +50253,26 @@ class ThemeLoader {
      */
     static resolveThemeReferences(theme, contextLogger) {
         if (theme.styles !== undefined) {
-            contextLogger.pushAttr("styles");
-            theme.styles = ThemeLoader.resolveStyles(Theme_1.getStyles(theme.styles), theme.definitions, contextLogger);
-            contextLogger.pop();
-            contextLogger.pop();
+            for (const styleSetName in theme.styles) {
+                if (!theme.styles.hasOwnProperty(styleSetName)) {
+                    continue;
+                }
+                contextLogger.pushAttr("styles");
+                contextLogger.pushAttr(styleSetName);
+                theme.styles[styleSetName] = ThemeLoader.resolveStyleSet(theme.styles[styleSetName], theme.definitions, contextLogger);
+                contextLogger.pop();
+                contextLogger.pop();
+            }
         }
         return theme;
     }
     /**
      * Expand all `ref` in [[StyleSet]] basing on `definitions`.
      */
-    static resolveStyles(styles, definitions, contextLogger) {
+    static resolveStyleSet(styleSet, definitions, contextLogger) {
         const result = [];
-        for (let index = 0; index < styles.length; ++index) {
-            const currentStyle = styles[index];
+        for (let index = 0; index < styleSet.length; ++index) {
+            const currentStyle = styleSet[index];
             contextLogger.pushIndex(index);
             const resolvedStyle = ThemeLoader.resolveStyle(currentStyle, definitions, contextLogger);
             if (resolvedStyle !== undefined) {
@@ -50410,48 +50391,61 @@ class ThemeLoader {
     static mergeThemes(theme, baseTheme) {
         const definitions = Object.assign(Object.assign({}, baseTheme.definitions), theme.definitions);
         let styles;
-        const baseStyles = Theme_1.getStyles(baseTheme.styles);
-        const themeStyles = Theme_1.getStyles(theme.styles);
         if (baseTheme.styles && theme.styles) {
-            const newStyles = [];
-            const styleIdMap = new Map();
-            baseStyles.forEach(style => {
-                if (typeof style.id === "string") {
-                    //multiple identical style.ids are not supported and will fall back to the
-                    //first occurence
-                    if (!styleIdMap.has(style.id)) {
-                        styleIdMap.set(style.id, newStyles.length);
-                    }
+            const currentStyleSets = Object.keys(baseTheme.styles);
+            const incomingStyleSets = Object.keys(theme.styles);
+            styles = {};
+            currentStyleSets.forEach(styleSetName => {
+                const index = incomingStyleSets.indexOf(styleSetName);
+                if (index !== -1) {
+                    // merge the current and incoming styleset
+                    // and add the result to `styles`.
+                    const baseStyleSet = baseTheme.styles[styleSetName];
+                    const newStyleSet = [];
+                    const styleIdMap = new Map();
+                    baseStyleSet.forEach(style => {
+                        if (typeof style.id === "string") {
+                            styleIdMap.set(style.id, newStyleSet.length);
+                        }
+                        newStyleSet.push(style);
+                    });
+                    const incomingStyleSet = theme.styles[styleSetName];
+                    incomingStyleSet.forEach(style => {
+                        if (typeof style.extends === "string" && styleIdMap.has(style.extends)) {
+                            // extends the existing style referenced by `style.extends`.
+                            const baseStyleIndex = styleIdMap.get(style.extends);
+                            const baseStyle = newStyleSet[baseStyleIndex];
+                            newStyleSet[baseStyleIndex] = Object.assign(Object.assign({}, baseStyle), style);
+                            newStyleSet[baseStyleIndex].extends = undefined;
+                            return;
+                        }
+                        if (typeof style.id === "string" && styleIdMap.has(style.id)) {
+                            // overrides the existing style with `id` equals to `style.id`.
+                            const styleIndex = styleIdMap.get(style.id);
+                            newStyleSet[styleIndex] = style;
+                            return;
+                        }
+                        newStyleSet.push(style);
+                    });
+                    styles[styleSetName] = newStyleSet;
+                    // remove the styleset from the incoming list
+                    incomingStyleSets.splice(index, 1);
                 }
-                newStyles.push(style);
+                else {
+                    // copy the existing style set to `styles`.
+                    styles[styleSetName] = baseTheme.styles[styleSetName];
+                }
             });
-            themeStyles.forEach(style => {
-                if (typeof style.extends === "string" && styleIdMap.has(style.extends)) {
-                    // extends the existing style referenced by `style.extends`.
-                    const baseStyleIndex = styleIdMap.get(style.extends);
-                    const baseStyle = newStyles[baseStyleIndex];
-                    newStyles[baseStyleIndex] = Object.assign(Object.assign({}, baseStyle), style);
-                    newStyles[baseStyleIndex].extends = undefined;
-                    return;
-                }
-                if (typeof style.id === "string" && styleIdMap.has(style.id)) {
-                    // overrides the existing style with `id` equals to `style.id`.
-                    const styleIndex = styleIdMap.get(style.id);
-                    // only match if the two rules are from the same styleset
-                    if (newStyles[styleIndex].styleSet === style.styleSet) {
-                        newStyles[styleIndex] = style;
-                    }
-                    return;
-                }
-                newStyles.push(style);
+            // add the remaining stylesets to styles.
+            incomingStyleSets.forEach(p => {
+                styles[p] = theme.styles[p];
             });
-            styles = newStyles;
         }
         else if (baseTheme.styles) {
-            styles = [...baseStyles];
+            styles = Object.assign({}, baseTheme.styles);
         }
         else if (theme.styles) {
-            styles = [...themeStyles];
+            styles = Object.assign({}, theme.styles);
         }
         return Object.assign(Object.assign(Object.assign(Object.assign({}, baseTheme), theme), ThemeLoader.mergeImageTextures(theme, baseTheme)), { definitions,
             styles });
@@ -50477,6 +50471,27 @@ class ThemeLoader {
             images,
             imageTextures
         };
+    }
+    static convertFlatTheme(theme) {
+        if (Array.isArray(theme.styles)) {
+            // Convert the flat theme to a standard theme.
+            const styles = {};
+            theme.styles.forEach(style => {
+                if (harp_datasource_protocol_1.isJsonExpr(style)) {
+                    throw new Error("invalid usage of theme reference");
+                }
+                const styleSetName = style.styleSet;
+                if (styleSetName === undefined) {
+                    throw new Error("missing reference to style set");
+                }
+                if (!styles[styleSetName]) {
+                    styles[styleSetName] = [];
+                }
+                styles[styleSetName].push(style);
+            });
+            theme.styles = styles;
+        }
+        return theme;
     }
     static resolveResources(theme, childUrlResolver) {
         if (theme.sky && theme.sky.type === "cubemap") {
@@ -50507,16 +50522,22 @@ class ThemeLoader {
             }
         }
         if (theme.styles !== undefined) {
-            for (const style of Theme_1.getStyles(theme.styles)) {
-                if (!style.attr) {
+            for (const styleSetName in theme.styles) {
+                if (!theme.styles.hasOwnProperty(styleSetName)) {
                     continue;
                 }
-                ["map", "normalMap", "displacementMap", "roughnessMap"].forEach(texturePropertyName => {
-                    const textureProperty = style.attr[texturePropertyName];
-                    if (textureProperty && typeof textureProperty === "string") {
-                        style.attr[texturePropertyName] = childUrlResolver.resolveUri(textureProperty);
+                const styleSet = theme.styles[styleSetName];
+                for (const style of styleSet) {
+                    if (!style.attr) {
+                        continue;
                     }
-                });
+                    ["map", "normalMap", "displacementMap", "roughnessMap"].forEach(texturePropertyName => {
+                        const textureProperty = style.attr[texturePropertyName];
+                        if (textureProperty && typeof textureProperty === "string") {
+                            style.attr[texturePropertyName] = childUrlResolver.resolveUri(textureProperty);
+                        }
+                    });
+                }
             }
         }
     }

@@ -69,43 +69,49 @@ West</a>.</p>`;
         const urbanAreaTexture = "resources/wests_textures/paving.png";
         const parkTexture = "resources/wests_textures/clover.png";
         if (theme.styles) {
-            theme.styles.forEach(style => {
-                if (Expr_1.isJsonExpr(style)) {
-                    return;
+            for (const styleSetName in theme.styles) {
+                if (!theme.styles.hasOwnProperty(styleSetName)) {
+                    continue;
                 }
-                if (style.description === "urban area") {
-                    style.technique = "standard";
-                    style.attr = {
-                        color: "#ffffff",
-                        map: urbanAreaTexture,
-                        mapProperties: {
-                            repeatU: 10,
-                            repeatV: 10,
-                            wrapS: "repeat",
-                            wrapT: "repeat"
-                        },
-                        textureCoordinateType: harp_datasource_protocol_1.TextureCoordinateType.TileSpace
-                    };
-                }
-                else if (style.description === "park") {
-                    style.technique = "standard";
-                    style.attr = {
-                        color: "#ffffff",
-                        map: parkTexture,
-                        mapProperties: {
-                            repeatU: 5,
-                            repeatV: 5,
-                            wrapS: "repeat",
-                            wrapT: "repeat"
-                        },
-                        textureCoordinateType: harp_datasource_protocol_1.TextureCoordinateType.TileSpace
-                    };
-                }
-                else if (style.description === "building_geometry") {
-                    // Disable extruded buildings to reduce noise.
-                    style.technique = "none";
-                }
-            });
+                const styleSet = theme.styles[styleSetName];
+                styleSet.forEach(style => {
+                    if (Expr_1.isJsonExpr(style)) {
+                        return;
+                    }
+                    if (style.description === "urban area") {
+                        style.technique = "standard";
+                        style.attr = {
+                            color: "#ffffff",
+                            map: urbanAreaTexture,
+                            mapProperties: {
+                                repeatU: 10,
+                                repeatV: 10,
+                                wrapS: "repeat",
+                                wrapT: "repeat"
+                            },
+                            textureCoordinateType: harp_datasource_protocol_1.TextureCoordinateType.TileSpace
+                        };
+                    }
+                    else if (style.description === "park") {
+                        style.technique = "standard";
+                        style.attr = {
+                            color: "#ffffff",
+                            map: parkTexture,
+                            mapProperties: {
+                                repeatU: 5,
+                                repeatV: 5,
+                                wrapS: "repeat",
+                                wrapT: "repeat"
+                            },
+                            textureCoordinateType: harp_datasource_protocol_1.TextureCoordinateType.TileSpace
+                        };
+                    }
+                    else if (style.description === "building_geometry") {
+                        // Disable extruded buildings to reduce noise.
+                        style.technique = "none";
+                    }
+                });
+            }
         }
         return theme;
     }

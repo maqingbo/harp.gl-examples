@@ -7719,7 +7719,7 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.InterpolateExpr = exports.StepExpr = exports.CaseExpr = exports.MatchExpr = exports.LookupExpr = exports.CallExpr = exports.HasAttributeExpr = exports.ObjectLiteralExpr = exports.StringLiteralExpr = exports.NumberLiteralExpr = exports.BooleanLiteralExpr = exports.NullLiteralExpr = exports.LiteralExpr = exports.VarExpr = exports.Expr = exports.ExprScope = exports.isJsonExpr = exports.ExprDependencies = void 0;
 /*
- * Copyright (C) 2019-2022 HERE Europe B.V.
+ * Copyright (C) 2019-2021 HERE Europe B.V.
  * Licensed under Apache 2.0, see full license in LICENSE
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12157,7 +12157,7 @@ exports.setTechniqueRenderOrderOrPriority = setTechniqueRenderOrderOrPriority;
 "use strict";
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
-exports.getStyles = exports.isStylesDictionary = exports.isJsonExprReference = exports.getDefinitionValue = exports.isVerboseDefinition = void 0;
+exports.isJsonExprReference = exports.getDefinitionValue = exports.isVerboseDefinition = void 0;
 /**
  * This is to distinguish between definition types at runtime, to be deprecated with
  * {@link VerboseDefinition}
@@ -12197,56 +12197,6 @@ function isJsonExprReference(value) {
         typeof value[1] === "string");
 }
 exports.isJsonExprReference = isJsonExprReference;
-/**
- * Utility function to convert old style format to new one, to be deprecated with
- * {@link StylesDictionary}
- *
- * @param stylesDict
- * @returns
- *
- */
-function convertDictionaryToStyles(stylesDict) {
-    const styles = [];
-    for (const styleSetName in stylesDict) {
-        stylesDict[styleSetName].forEach(style => {
-            if (style.styleSet === undefined) {
-                style.styleSet = styleSetName;
-            }
-            styles.push(style);
-        });
-    }
-    return styles;
-}
-/**
- * Utility function to distinguish Styles until {@link StylesDictionary} is deprecated
- *
- * @deprecated
- * @param styles
- * @returns
- */
-function isStylesDictionary(styles) {
-    return styles !== undefined && !Array.isArray(styles);
-}
-exports.isStylesDictionary = isStylesDictionary;
-/**
- * Utility function to retrieve Styles until {@link StylesDictionary} is deprecated
- *
- * @deprecated
- * @param styles
- * @returns
- */
-function getStyles(styles) {
-    if (styles === undefined) {
-        return [];
-    }
-    else if (isStylesDictionary(styles)) {
-        return convertDictionaryToStyles(styles);
-    }
-    else {
-        return styles;
-    }
-}
-exports.getStyles = getStyles;
 
 
 /***/ }),
@@ -12267,7 +12217,6 @@ exports.getStyles = getStyles;
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.ThemeVisitor = void 0;
 const Expr_1 = __webpack_require__(/*! ./Expr */ "../harp-datasource-protocol/lib/Expr.ts");
-const Theme_1 = __webpack_require__(/*! ./Theme */ "../harp-datasource-protocol/lib/Theme.ts");
 /**
  * The ThemeVisitor visits every style in the theme in a depth-first fashion.
  */
@@ -12293,9 +12242,13 @@ class ThemeVisitor {
             return false;
         };
         if (this.theme.styles !== undefined) {
-            for (const style of Theme_1.getStyles(this.theme.styles)) {
-                if (visit(style)) {
-                    return true;
+            for (const styleSetName in this.theme.styles) {
+                if (this.theme.styles[styleSetName] !== undefined) {
+                    for (const style of this.theme.styles[styleSetName]) {
+                        if (visit(style)) {
+                            return true;
+                        }
+                    }
                 }
             }
         }
